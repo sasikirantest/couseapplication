@@ -10,7 +10,7 @@ import { CheckCircle, CreditCard, Shield, Zap } from 'lucide-react';
 
 export function PaymentPage() {
   const [loading, setLoading] = useState(false);
-  const { currentUser, hasAccess, refreshUserData } = useAuth();
+  const { currentUser, hasAccess, refreshUserData, userRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
