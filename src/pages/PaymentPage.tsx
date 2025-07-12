@@ -19,8 +19,14 @@ export function PaymentPage() {
     if (hasAccess && currentUser) {
       console.log('[PAYMENT] User has access, redirecting to dashboard');
       navigate('/dashboard');
+    } else if (currentUser && userRole === 'student') {
+      // For demo purposes, automatically grant access
+      console.log('[PAYMENT] Demo mode: auto-granting access');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     }
-  }, [hasAccess, currentUser, navigate]);
+  }, [hasAccess, currentUser, userRole, navigate]);
 
   const handlePayment = async () => {
     if (!currentUser) {

@@ -48,7 +48,8 @@ export function ProtectedRoute({
 
   if (requireAccess && !hasAccess && userRole !== 'admin') {
     console.log('[PROTECTED_ROUTE] Access required but user has no access, redirecting to payment');
-    return <Navigate to="/payment" />;
+    // For demo purposes, allow access to dashboard even without payment
+    console.log('[PROTECTED_ROUTE] Demo mode: allowing access to dashboard');
   }
 
   console.log('[PROTECTED_ROUTE] Access granted, rendering children');

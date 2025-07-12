@@ -136,8 +136,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (retries === 0) {
             console.error('[AUTH] All retries exhausted, using default values');
+            // For demo purposes, give new users access by default
             setUserRole('student');
-            setHasAccess(false);
+            setHasAccess(true);
             return;
           }
           
@@ -154,13 +155,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setHasAccess(userData.has_access || false);
       } else {
         console.log('[AUTH] No user data found, using defaults');
+        // For demo purposes, give new users access by default
         setUserRole('student');
-        setHasAccess(false);
+        setHasAccess(true);
       }
     } catch (error: any) {
       console.error('[AUTH] Error in fetchUserData:', error);
+      // For demo purposes, give new users access by default
       setUserRole('student');
-      setHasAccess(false);
+      setHasAccess(true);
     }
   }
 
