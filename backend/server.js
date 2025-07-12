@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -7,7 +8,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: true,
+  origin: ['http://localhost:5173', 'https://localhost:5173'],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -28,14 +29,38 @@ const asyncHandler = (fn) => (req, res, next) => {
 };
 
 // Import routes
-const usersRoutes = require('./routes/users');
-const modulesRoutes = require('./routes/modules');
-const paymentsRoutes = require('./routes/payments');
+let usersRoutes, modulesRoutes, paymentsRoutes;
+
+try {
+  usersRoutes = require('./routes/users');
+  modulesRoutes = require('./routes/modules');
+  paymentsRoutes = require('./routes/payments');
+} catch (error) {
+  console.error('Error loading routes:', error.message);
+  console.log('Routes will be created with fallback handlers');
+}
 
 // Use routes
-app.use('/api/users', usersRoutes);
-app.use('/api/modules', modulesRoutes);
-app.use('/api/payments', paymentsRoutes);
+if (usersRoutes) {
+  app.use('/api/users', usersRoutes);
+} else {
+  // Fallback user routes
+  app.use('/api/users', require('./fallback-routes'));
+}
+
+if (modulesRoutes) {
+  app.use('/api/modules', modulesRoutes);
+} else {
+  // Fallback module routes
+  app.use('/api/modules', require('./fallback-routes'));
+}
+
+if (paymentsRoutes) {
+  app.use('/api/payments', paymentsRoutes);
+} else {
+  // Fallback payment routes
+  app.use('/api/payments', require('./fallback-routes'));
+}
 
 // Health check
 app.get('/api/health', asyncHandler(async (req, res) => {
