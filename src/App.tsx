@@ -36,7 +36,7 @@ function App() {
             <Route 
               path="/dashboard" 
               element={
-                <ProtectedRoute requireAccess>
+                <ProtectedRoute requireAccess={true}>
                   <StudentDashboard />
                 </ProtectedRoute>
               } 
@@ -45,7 +45,7 @@ function App() {
             <Route 
               path="/admin" 
               element={
-                <ProtectedRoute requireAdmin>
+                <ProtectedRoute requireAdmin={true}>
                   <AdminDashboard />
                 </ProtectedRoute>
               } 

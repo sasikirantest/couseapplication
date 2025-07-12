@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,19 +32,16 @@ export function LoginPage() {
     try {
       await login(email, password);
       
-      // Navigate based on user role and access
-      if (userRole === 'admin') {
-        navigate('/admin');
-      } else if (hasAccess) {
-        navigate('/dashboard');
-      } else {
-        navigate('/payment');
-      }
-      
       toast({
         title: "Success",
         description: "Logged in successfully!",
       });
+      
+      // Small delay to ensure auth state is updated
+      setTimeout(() => {
+        // The useEffect in this component will handle navigation
+      }, 100);
+      
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -55,6 +52,28 @@ export function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Handle navigation after successful login
+  useEffect(() => {
+    if (currentUser && !loading) {
+      console.log('[LOGIN] User logged in, checking navigation...', {
+        userRole,
+        hasAccess,
+        currentUser: currentUser.uid
+      });
+      
+      if (userRole === 'admin') {
+        console.log('[LOGIN] Navigating to admin dashboard');
+        navigate('/admin');
+      } else if (hasAccess) {
+        console.log('[LOGIN] Navigating to student dashboard');
+        navigate('/dashboard');
+      } else {
+        console.log('[LOGIN] Navigating to payment page');
+        navigate('/payment');
+      }
+    }
+  }, [currentUser, userRole, hasAccess, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">

@@ -72,6 +72,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[AUTH] Starting login process for:', email);
       const result = await signInWithEmailAndPassword(auth, email, password);
       console.log('[AUTH] Firebase login successful');
+      
+      // Fetch user data immediately after login
+      if (result.user) {
+        await fetchUserData(result.user);
+      }
+      
       return result;
     } catch (error: any) {
       console.error('[AUTH] Login error:', error);

@@ -87,7 +87,7 @@ app.post('/api/users', (req, res) => {
       id,
       email,
       role,
-      has_access: role === 'admin',
+      has_access: role === 'admin' ? true : false,
       progress: {},
       created_at: new Date().toISOString()
     };

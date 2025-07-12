@@ -16,10 +16,11 @@ export function PaymentPage() {
 
   // If user already has access, redirect to dashboard
   React.useEffect(() => {
-    if (hasAccess) {
+    if (hasAccess && currentUser) {
+      console.log('[PAYMENT] User has access, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [hasAccess, navigate]);
+  }, [hasAccess, currentUser, navigate]);
 
   const handlePayment = async () => {
     if (!currentUser) {
