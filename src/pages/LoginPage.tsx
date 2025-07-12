@@ -12,7 +12,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, userRole, hasAccess } = useAuth();
+  const { login, userRole, hasAccess, currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -37,10 +37,7 @@ export function LoginPage() {
         description: "Logged in successfully!",
       });
       
-      // Small delay to ensure auth state is updated
-      setTimeout(() => {
-        // The useEffect in this component will handle navigation
-      }, 100);
+      // Navigation will be handled by useEffect
       
     } catch (error: any) {
       toast({
@@ -55,7 +52,7 @@ export function LoginPage() {
 
   // Handle navigation after successful login
   useEffect(() => {
-    if (currentUser && !loading) {
+    if (currentUser && userRole !== null && !loading) {
       console.log('[LOGIN] User logged in, checking navigation...', {
         userRole,
         hasAccess,

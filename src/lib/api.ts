@@ -108,7 +108,7 @@ async function apiRequest(endpoint: string, options: RequestInit = {}, retries =
         }
         
         // Wait before retrying (exponential backoff)
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        const delay = Math.min(500 * Math.pow(2, attempt - 1), 5000);
         console.log(`[API] Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
@@ -128,7 +128,7 @@ async function apiRequest(endpoint: string, options: RequestInit = {}, retries =
           throw error;
         }
         throw new APIError(
-          error.message || 'Network error occurred',
+          'Failed to connect to backend server. Please ensure the backend is running.',
           0,
           endpoint,
           error
@@ -136,7 +136,7 @@ async function apiRequest(endpoint: string, options: RequestInit = {}, retries =
       }
       
       // Wait before retrying (exponential backoff)
-      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+      const delay = Math.min(500 * Math.pow(2, attempt - 1), 5000);
       console.log(`[API] Network error, retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }

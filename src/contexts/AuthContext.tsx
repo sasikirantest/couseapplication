@@ -120,10 +120,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           retries--;
           
           // If user doesn't exist in backend, create them
-          if (error.status === 404 || error.message?.includes('User not found')) {
+          if (retries > 0 && (error.status === 404 || error.message?.includes('User not found') || error.message?.includes('Failed to fetch'))) {
             try {
               console.log('[AUTH] User not found in backend, creating...');
               await createUser(user.uid, user.email || '', 'student');
+              // Wait a moment for the user to be created
+              await new Promise(resolve => setTimeout(resolve, 500));
               userData = await getUserById(user.uid);
               console.log('[AUTH] User created and fetched successfully');
               break;
