@@ -2,90 +2,89 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: 'postgres', // Connect to default database first
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'password',
 });
 
 async function setupDatabase() {
   try {
-    console.log('🔧 Setting up database schema...');
+    console.log('Setting up database...');
     
-    const schemaSQL = `
-      -- Users table
-      CREATE TABLE IF NOT EXISTS users (
-          id VARCHAR(255) PRIMARY KEY, -- Firebase UID
-          email VARCHAR(255) UNIQUE NOT NULL,
-          role VARCHAR(50) DEFAULT 'student',
-          has_access BOOLEAN DEFAULT false,
-          progress JSONB DEFAULT '{}',
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Course modules table
-      CREATE TABLE IF NOT EXISTS modules (
-          id SERIAL PRIMARY KEY,
-          title VARCHAR(255) NOT NULL,
-          description TEXT,
-          video_url TEXT,
-          pdf_url TEXT,
-          order_num INTEGER NOT NULL,
-          is_published BOOLEAN DEFAULT false,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Payments table
-      CREATE TABLE IF NOT EXISTS payments (
-          id SERIAL PRIMARY KEY,
-          user_id VARCHAR(255) REFERENCES users(id),
-          amount DECIMAL(10,2) NOT NULL,
-          status VARCHAR(50) DEFAULT 'pending',
-          razorpay_payment_id VARCHAR(255),
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Create indexes for better performance
-      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-      CREATE INDEX IF NOT EXISTS idx_modules_order ON modules(order_num);
-      CREATE INDEX IF NOT EXISTS idx_modules_published ON modules(is_published);
-      CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
-      CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
-    `;
-
-    await pool.query(schemaSQL);
-    console.log('✅ Database schema setup completed successfully!');
-    
-    // Insert sample modules if they don't exist
-    const moduleCheck = await pool.query('SELECT COUNT(*) FROM modules');
-    if (parseInt(moduleCheck.rows[0].count) === 0) {
-      console.log('📚 Adding sample modules...');
-      
-      const sampleModules = `
-        INSERT INTO modules (title, description, video_url, pdf_url, order_num, is_published) VALUES
-        ('Introduction to AI', 'Learn the fundamentals of Artificial Intelligence', 'https://www.youtube.com/embed/dQw4w9WgXcQ', 'https://example.com/notes1.pdf', 1, true),
-        ('Machine Learning Basics', 'Understanding ML algorithms and concepts', 'https://www.youtube.com/embed/dQw4w9WgXcQ', 'https://example.com/notes2.pdf', 2, true),
-        ('Deep Learning Fundamentals', 'Dive into neural networks and deep learning', 'https://www.youtube.com/embed/dQw4w9WgXcQ', 'https://example.com/notes3.pdf', 3, true),
-        ('Natural Language Processing', 'Explore text processing and language models', 'https://www.youtube.com/embed/dQw4w9WgXcQ', 'https://example.com/notes4.pdf', 4, true),
-        ('Computer Vision', 'Learn image processing and object detection', 'https://www.youtube.com/embed/dQw4w9WgXcQ', 'https://example.com/notes5.pdf', 5, true),
-        ('AI Ethics & Future', 'Understand responsible AI development', 'https://www.youtube.com/embed/dQw4w9WgXcQ', 'https://example.com/notes6.pdf', 6, true);
-      `;
-      
-      await pool.query(sampleModules);
-      console.log('✅ Sample modules added successfully!');
+    // Create database if it doesn't exist
+    try {
+      await pool.query(`CREATE DATABASE ${process.env.DB_NAME || 'course_platform'}`);
+      console.log('Database created successfully');
+    } catch (error) {
+      if (error.code === '42P04') {
+        console.log('Database already exists');
+      } else {
+        throw error;
+      }
     }
     
-    // Test the setup
-    const result = await pool.query('SELECT COUNT(*) FROM modules');
-    console.log(`📊 Found ${result.rows[0].count} modules in database`);
+    // Connect to the actual database
+    const dbPool = new Pool({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      database: process.env.DB_NAME || 'course_platform',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'password',
+    });
     
-    process.exit(0);
+    // Create tables
+    await dbPool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        firebase_uid VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'student',
+        has_access BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await dbPool.query(`
+      CREATE TABLE IF NOT EXISTS modules (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        video_url VARCHAR(500),
+        order_index INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await dbPool.query(`
+      CREATE TABLE IF NOT EXISTS payments (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        amount DECIMAL(10,2),
+        status VARCHAR(50) DEFAULT 'pending',
+        stripe_payment_id VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Insert sample data
+    await dbPool.query(`
+      INSERT INTO modules (title, description, video_url, order_index) 
+      VALUES 
+        ('Introduction to React', 'Learn the basics of React', 'https://example.com/video1', 1),
+        ('State Management', 'Understanding state in React', 'https://example.com/video2', 2),
+        ('Advanced Patterns', 'Advanced React patterns', 'https://example.com/video3', 3)
+      ON CONFLICT DO NOTHING
+    `);
+    
+    console.log('Database setup completed successfully');
+    await dbPool.end();
+    await pool.end();
+    
   } catch (error) {
-    console.error('❌ Error setting up database:', error);
+    console.error('Database setup failed:', error);
     process.exit(1);
   }
 }
