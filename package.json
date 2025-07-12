@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "clean": "rm -rf node_modules package-lock.json && npm install"
+    "clean": "rm -rf node_modules package-lock.json && npm install",
+    "backend:install": "cd backend && npm install",
+    "backend:setup": "cd backend && npm run setup-db",
+    "backend:dev": "cd backend && npm run dev"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
